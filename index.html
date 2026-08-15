@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>めばえ ― ADHD向け集中学習アプリ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Zen+Maru+Gothic:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ===== ログイン画面 ===== -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-card">
+    <div class="login-mark">🌱</div>
+    <h1>めばえ</h1>
+    <p class="login-sub">名前を入れて、あなた専用の記録を始めよう</p>
+
+    <form id="loginForm">
+      <label class="login-field">
+        <span>名前</span>
+        <input type="text" id="loginNameInput" placeholder="例：たろう" autocomplete="off" maxlength="20" required>
+      </label>
+      <label class="login-field">
+        <span>合言葉（4桁の数字）</span>
+        <input type="password" id="loginPinInput" placeholder="例：1234" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" required>
+      </label>
+
+      <p class="login-error" id="loginError"></p>
+
+      <div class="login-actions">
+        <button type="submit" class="btn btn-primary">ログイン / はじめる</button>
+      </div>
+      <p class="login-note">※この合言葉はこの端末だけで使う簡易的なものです。他のサービスと同じパスワードは入力しないでね。初めての名前なら自動で新規登録されます。</p>
+    </form>
+  </div>
+</div>
+
+<!-- ===== アプリ本体 ===== -->
+<div class="app-root" id="appRoot" style="display:none;">
+
+<div class="bg-sky" aria-hidden="true">
+  <div class="firefly f1"></div>
+  <div class="firefly f2"></div>
+  <div class="firefly f3"></div>
+  <div class="firefly f4"></div>
+</div>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark">🌱</span>
+    <div class="brand-text">
+      <h1>めばえ</h1>
+      <p>気が散っても、また戻ればいい。</p>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <div class="user-pill" title="ログイン中のユーザー">
+      <span>👤</span>
+      <span id="activeUserName">―</span>
+    </div>
+    <div class="streak-pill" title="連続で取り組んだ日数">
+      <span class="streak-flame">🔥</span>
+      <span id="streakCount">0</span>
+      <span class="streak-label">日連続</span>
+    </div>
+    <button class="icon-btn" id="settingsBtn" aria-label="設定を開く">⚙️</button>
+    <button class="icon-btn" id="logoutBtn" aria-label="ログアウト">🚪</button>
+  </div>
+</header>
+
+<main class="layout">
+
+  <!-- ===== 集中タイマー ===== -->
+  <section class="panel timer-panel" aria-label="集中タイマー">
+    <div class="timer-mode-label" id="modeLabel">集中タイム</div>
+
+    <div class="timer-ring-wrap">
+      <svg class="timer-ring" viewBox="0 0 240 240">
+        <circle class="ring-track" cx="120" cy="120" r="104"></circle>
+        <circle class="ring-progress" id="ringProgress" cx="120" cy="120" r="104"></circle>
+      </svg>
+      <div class="timer-center">
+        <div class="timer-digits" id="timerDigits">25:00</div>
+        <div class="timer-task" id="timerCurrentTask">今のタスクを選んでね</div>
+      </div>
+    </div>
+
+    <div class="timer-controls">
+      <button class="btn btn-ghost" id="resetBtn" aria-label="リセット">↺</button>
+      <button class="btn btn-primary" id="startPauseBtn">はじめる</button>
+      <button class="btn btn-ghost" id="skipBtn" aria-label="スキップ">⏭</button>
+    </div>
+
+    <button class="btn btn-quickstart" id="quickStartBtn">
+      ⚡ とりあえず2分だけやってみる
+    </button>
+
+    <div class="length-presets" id="lengthPresets">
+      <button class="chip" data-min="5">5分</button>
+      <button class="chip is-active" data-min="15">15分</button>
+      <button class="chip" data-min="25">25分</button>
+      <button class="chip" data-min="45">45分</button>
+    </div>
+
+    <form class="custom-length-form" id="customLengthForm">
+      <input
+        type="number"
+        id="customLengthInput"
+        min="1"
+        max="180"
+        step="1"
+        placeholder="分数を入力"
+        inputmode="numeric">
+      <button type="submit" class="btn btn-small">セット</button>
+    </form>
+  </section>
+
+  <!-- ===== タスク分解 ===== -->
+  <section class="panel tasks-panel" aria-label="タスクの分解">
+    <div class="panel-head">
+      <h2>今日のタスク</h2>
+      <span class="panel-sub">大きいタスクは、小さく割ると始めやすいよ</span>
+    </div>
+
+    <form class="add-task-form" id="bigTaskForm">
+      <input type="text" id="bigTaskInput" placeholder="大きいタスクを入力（例：レポートを書く）" autocomplete="off">
+      <button type="submit" class="btn btn-small">分解する</button>
+    </form>
+
+    <div class="task-subhead">進行中</div>
+    <ul class="microtask-list" id="microtaskList">
+      <!-- JS が生成 -->
+    </ul>
+
+    <form class="add-micro-form" id="microTaskForm">
+      <input type="text" id="microTaskInput" placeholder="＋ 小さいタスクを直接追加" autocomplete="off">
+      <button type="submit" class="btn btn-ghost btn-small">追加</button>
+    </form>
+
+    <div class="task-subhead task-subhead-done">✓ 達成済み</div>
+    <ul class="microtask-list completed-list" id="completedTaskList">
+      <!-- JS が生成 -->
+    </ul>
+  </section>
+
+  <!-- ===== 気になったことメモ ===== -->
+  <section class="panel parking-panel" aria-label="気になったことメモ">
+    <div class="panel-head">
+      <h2>気になったことメモ</h2>
+      <span class="panel-sub">今すぐ動かず、ここに置いて集中に戻ろう</span>
+    </div>
+    <form class="parking-form" id="parkingForm">
+      <input type="text" id="parkingInput" placeholder="ふと浮かんだこと・やりたくなったこと…" autocomplete="off">
+      <button type="submit" class="btn btn-small">置く</button>
+    </form>
+    <ul class="parking-list" id="parkingList"></ul>
+  </section>
+
+  <!-- ===== 集中の庭 ===== -->
+  <section class="panel garden-panel" aria-label="集中の庭">
+    <div class="panel-head">
+      <h2>集中の庭</h2>
+      <span class="panel-sub" id="gardenSub">今日はまだ何も咲いていません</span>
+    </div>
+    <div class="garden-strip" id="gardenStrip"></div>
+  </section>
+
+  <!-- ===== カレンダー ===== -->
+  <section class="panel calendar-panel" aria-label="カレンダー">
+    <div class="panel-head">
+      <h2>カレンダー</h2>
+      <span class="panel-sub">予定を入れて、やることを目で見えるようにしよう</span>
+    </div>
+
+    <div class="calendar-layout">
+      <!-- 左側：視覚的なカレンダー -->
+      <div class="calendar-visual">
+        <div class="calendar-nav">
+          <button class="icon-btn" id="calPrevBtn" aria-label="前の月">←</button>
+          <div class="calendar-month-label" id="calMonthLabel">――</div>
+          <button class="icon-btn" id="calNextBtn" aria-label="次の月">→</button>
+          <button class="btn btn-ghost btn-today" id="calTodayBtn">今日</button>
+        </div>
+
+        <div class="calendar-weekdays">
+          <span>日</span><span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span>土</span>
+        </div>
+        <div class="calendar-grid" id="calendarGrid"></div>
+
+        <div class="calendar-legend">
+          <span><i class="legend-dot cat-study"></i>勉強</span>
+          <span><i class="legend-dot cat-task"></i>課題</span>
+          <span><i class="legend-dot cat-test"></i>テスト</span>
+          <span><i class="legend-dot cat-other"></i>その他</span>
+        </div>
+
+        <div class="selected-day-events">
+          <div class="panel-sub" id="selectedDayLabel">日付を選ぶとここに予定が表示されます</div>
+          <ul class="event-list" id="eventList"></ul>
+        </div>
+      </div>
+
+      <!-- 右側：予定入力フォーム -->
+      <div class="calendar-input">
+        <form class="memo-form event-form" id="eventForm">
+          <div class="memo-row">
+            <label class="memo-field">
+              <span>日付</span>
+              <input type="date" id="eventDateInput" required>
+            </label>
+          </div>
+          <div class="memo-row">
+            <label class="memo-field">
+              <span>開始時刻（任意）</span>
+              <input type="time" id="eventStartTimeInput">
+            </label>
+            <label class="memo-field">
+              <span>終了時刻（任意）</span>
+              <input type="time" id="eventEndTimeInput">
+            </label>
+          </div>
+          <label class="memo-field">
+            <span>予定タイトル</span>
+            <input type="text" id="eventTitleInput" maxlength="40" placeholder="例：数学の宿題提出" required>
+          </label>
+          <label class="memo-field">
+            <span>カテゴリ</span>
+            <select id="eventCategorySelect">
+              <option value="study">勉強</option>
+              <option value="task">課題</option>
+              <option value="test">テスト</option>
+              <option value="other">その他</option>
+            </select>
+          </label>
+          <div class="other-category-fields" id="otherCategoryFields" hidden>
+            <label class="memo-field">
+              <span>カテゴリ名（その他）</span>
+              <input type="text" id="eventCustomCategoryInput" list="customCategoryDatalist" maxlength="20" placeholder="例：資格試験・面接など" autocomplete="off">
+              <datalist id="customCategoryDatalist"></datalist>
+            </label>
+            <div class="custom-category-history" id="customCategoryHistoryChips"></div>
+            <label class="memo-field">
+              <span>色を選ぶ</span>
+              <div class="color-picker-row">
+                <input type="color" id="eventCustomColorInput" value="#A78BFA">
+                <span class="color-preview-hint" id="colorPreviewHint">プレビュー</span>
+              </div>
+            </label>
+          </div>
+          <button type="submit" class="btn btn-small">予定を追加</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 今日の記録（勉強メモ） ===== -->
+  <section class="panel memo-panel" aria-label="今日の記録">
+    <div class="panel-head">
+      <h2>今日の記録</h2>
+      <span class="panel-sub">勉強した内容をひとことだけ残しておこう</span>
+    </div>
+
+    <form class="memo-form" id="memoForm">
+      <div class="memo-row">
+        <label class="memo-field">
+          <span>日付</span>
+          <input type="date" id="memoDateInput" required>
+        </label>
+        <label class="memo-field memo-field-time">
+          <span>勉強時間</span>
+          <div class="memo-time-inputs">
+            <input type="number" id="memoHoursInput" min="0" max="23" placeholder="0" inputmode="numeric">
+            <span class="memo-time-unit">時間</span>
+            <input type="number" id="memoMinutesInput" min="0" max="59" placeholder="0" inputmode="numeric">
+            <span class="memo-time-unit">分</span>
+          </div>
+        </label>
+      </div>
+
+      <label class="memo-field">
+        <span>タスク</span>
+        <select id="memoTaskSelect">
+          <option value="">選択しない</option>
+        </select>
+      </label>
+
+      <label class="memo-field">
+        <span class="memo-note-label">ひとこと <span class="memo-char-count" id="memoCharCount">0/100</span></span>
+        <textarea id="memoNoteInput" maxlength="100" rows="2" placeholder="今日やったこと・気づいたことなど"></textarea>
+      </label>
+
+      <button type="submit" class="btn btn-small">記録する</button>
+    </form>
+
+    <ul class="memo-list" id="memoList"></ul>
+  </section>
+
+</main>
+
+<!-- ===== 休憩リマインダー モーダル ===== -->
+<div class="modal-backdrop" id="breakModal">
+  <div class="modal">
+    <div class="modal-icon">🌤️</div>
+    <h3>ちょっと一息つこうか</h3>
+    <p>ここまでよく集中できたね。少し休むと、続きもラクになるよ。</p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="modalContinueBtn">あと少しだけ続ける</button>
+      <button class="btn btn-primary" id="modalBreakBtn">休憩する</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 設定パネル ===== -->
+<div class="modal-backdrop" id="settingsModal">
+  <div class="modal settings-modal">
+    <h3>設定</h3>
+
+    <label class="setting-row">
+      <span>休憩の長さ</span>
+      <select id="breakLengthSelect">
+        <option value="5">5分</option>
+        <option value="10">10分</option>
+        <option value="15">15分</option>
+      </select>
+    </label>
+
+    <label class="setting-row">
+      <span>何セットごとに休憩を促す？</span>
+      <select id="breakThresholdSelect">
+        <option value="1">毎回</option>
+        <option value="2">2セットごと</option>
+        <option value="3">3セットごと</option>
+        <option value="99">促さない</option>
+      </select>
+    </label>
+
+    <label class="setting-row setting-toggle">
+      <span>ながら作業モード（背景アニメーション）</span>
+      <input type="checkbox" id="ambientToggle" checked>
+    </label>
+
+    <label class="setting-row setting-toggle">
+      <span>音を鳴らす</span>
+      <input type="checkbox" id="soundToggle" checked>
+    </label>
+
+    <label class="setting-row setting-toggle">
+      <span>アニメーションを減らす</span>
+      <input type="checkbox" id="reduceMotionToggle">
+    </label>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="resetDataBtn">今日の記録をリセット</button>
+      <button class="btn btn-primary" id="closeSettingsBtn">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+</div><!-- /appRoot -->
+
+<script src="script.js"></script>
+</body>
+</html>
