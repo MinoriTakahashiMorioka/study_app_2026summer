@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>総合便利アプリ</title>
+
+  <!-- iPhone の「ホーム画面に追加」でアプリのように全画面表示する -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="便利アプリ">
+  <meta name="theme-color" content="#F1F4F2" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#101614" media="(prefers-color-scheme: dark)">
+
+  <!-- ホーム画面に追加したときのアイコンと名前 -->
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" href="icons/favicon-48.png">
+
+  <!-- フォント（読み込めない環境では端末の日本語フォントで表示されます） -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=Shippori+Mincho:wght@400;600&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=Zen+Maru+Gothic:wght@700&display=swap">
+
+  <!-- スタイル：共通 → 画面ごと の順に読み込む -->
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/login.css">
+  <link rel="stylesheet" href="css/hub.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/calendar.css">
+  <link rel="stylesheet" href="css/study.css">
+  <link rel="stylesheet" href="css/profile.css">
+  <link rel="stylesheet" href="css/routine.css">
+  <link rel="stylesheet" href="css/diary.css">
+    <link rel="stylesheet" href="css/cashbook.css">
+
+  <style>
+    /* iPhone のノッチ・ホームバーに中身が重ならないようにする */
+    :root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+  </style>
+
+  <!-- アプリ本体（ES モジュール） -->
+  <script type="module" src="js/main.js"></script>
+</head>
+<body>
+  <div id="app"></div>
+  <noscript>このアプリを使うには JavaScript を有効にしてください。</noscript>
+</body>
+</html>

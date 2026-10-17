@@ -1,0 +1,390 @@
+/* =========================================================
+   diary.css … 日記
+   Layout: 上に表示の切り替え（日・週・月・お気に入り）
+           日 = 中央に1日分のページ（罫線のある明朝体の本文）、左右の端に前・次の記録日
+           週・月 = 上で期間を選ぶカレンダー → 下に日ごとのカード
+   ♡ は評価（1〜5）、☆ はお気に入り。月の気分カレンダーは ♡ の色の濃さで評価を表す
+   ========================================================= */
+
+:root {
+  --diary: #8B5E34;
+  --on-diary: #FFFFFF;
+  --heart: #D6456A;
+  --star: #C98A00;
+  --rule: color-mix(in srgb, var(--diary) 14%, transparent);
+  --paper-warm: color-mix(in srgb, var(--diary) 4%, var(--surface));
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --diary: #D7A574; --on-diary: #2A1A0A; --heart: #F07A98; --star: #F2C14E; }
+}
+:root[data-theme="dark"] { --diary: #D7A574; --on-diary: #2A1A0A; --heart: #F07A98; --star: #F2C14E; }
+
+.diary { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; max-width: 1080px; width: 100%; margin-inline: auto; }
+.diary-panel { min-width: 0; }
+.diary-tabs { grid-template-columns: repeat(4, minmax(0, 1fr)); max-width: 520px; }
+@media (max-width: 420px) { .diary-tabs .tab .icon { display: none; } }
+
+/* ---------- ♡ と ☆ ---------- */
+
+.hearts { display: inline-flex; gap: 1px; color: var(--line); }
+.hearts .is-on { color: var(--heart); }
+.hearts-sm { font-size: .75rem; }
+.hearts-md { font-size: 1rem; }
+.hearts-lg { font-size: 1.5rem; gap: 3px; }
+
+.heart-picker { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; }
+.heart-btn {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ink-2);
+  font-size: 1.6rem;
+  transition: transform .12s, color .12s;
+}
+.heart-btn:hover { background: color-mix(in srgb, var(--heart) 10%, transparent); }
+.heart-btn.is-on { color: var(--heart); }
+.heart-btn:active { transform: scale(.88); }
+.heart-label { margin-left: 8px; color: var(--ink-2); font-size: var(--step--1); font-weight: 700; }
+
+.star-btn {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--ink-2);
+  font-size: 1.3rem;
+}
+.star-btn:hover { border-color: var(--star); color: var(--star); }
+.star-btn.is-on { border-color: color-mix(in srgb, var(--star) 60%, var(--line)); background: color-mix(in srgb, var(--star) 14%, var(--surface)); color: var(--star); }
+
+/* ---------- 入力シート ---------- */
+
+.label-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.char-count { color: var(--ink-2); font-size: .75rem; font-variant-numeric: tabular-nums; }
+.char-count[data-level="near"] { color: var(--warn); font-weight: 700; }
+.char-count[data-level="max"] { color: var(--danger); font-weight: 700; }
+.diary-form textarea.text-input { line-height: 1.8; }
+
+.date-note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  padding: 8px 10px;
+  border-radius: var(--r-sm);
+  background: color-mix(in srgb, var(--warn) 14%, var(--surface));
+  font-size: var(--step--1);
+}
+.date-note .icon { color: var(--warn); }
+
+.fav-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 16px 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 700;
+}
+.fav-toggle .icon { color: var(--ink-2); font-size: 1.2rem; }
+.fav-toggle[aria-pressed="true"] { border-color: color-mix(in srgb, var(--star) 60%, var(--line)); background: color-mix(in srgb, var(--star) 14%, var(--surface)); }
+.fav-toggle[aria-pressed="true"] .icon { color: var(--star); }
+
+/* =========================================================
+   日ごと
+   ========================================================= */
+
+.day-view { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+.day-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; }
+.day-tools .text-input { width: auto; min-width: 0; max-width: 11em; font-variant-numeric: tabular-nums; }
+
+.day-layout { display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px; align-items: stretch; gap: 8px; }
+@media (min-width: 860px) { .day-layout { grid-template-columns: 170px minmax(0, 1fr) 170px; gap: 16px; } }
+
+/* 左右の端：前・次の記録日 */
+.day-edge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 12px 4px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  color: var(--ink);
+  text-align: center;
+}
+button.day-edge:hover { border-color: var(--diary); background: color-mix(in srgb, var(--diary) 6%, var(--surface)); }
+.day-edge > .icon { color: var(--diary); font-size: 1.3rem; }
+.day-edge .edge-label { color: var(--ink-2); font-size: .6875rem; font-weight: 700; }
+.day-edge .edge-date { font-size: var(--step--1); font-weight: 700; font-variant-numeric: tabular-nums; }
+.day-edge .edge-excerpt {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--ink-2);
+  font-size: .75rem;
+  line-height: 1.5;
+  text-align: left;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+}
+.day-edge.is-none { border-style: dashed; background: transparent; }
+@media (max-width: 859px) {
+  /* スマホでは細い縦長のボタン（日付は縦書き） */
+  .day-edge { justify-content: flex-start; padding-top: 40px; }
+  .day-edge .edge-label, .day-edge .edge-excerpt { display: none; }
+  .day-edge .edge-date { writing-mode: vertical-rl; font-size: .75rem; letter-spacing: .05em; }
+  .day-edge.is-none .edge-label { display: block; writing-mode: vertical-rl; font-size: .625rem; font-weight: 500; }
+}
+
+/* 1日分のページ */
+.diary-page {
+  display: grid;
+  align-content: start;
+  gap: 18px;
+  min-width: 0;
+  min-height: 62vh;
+  padding: clamp(18px, 4vw, 40px);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--paper-warm);
+  box-shadow: var(--shadow);
+}
+.diary-page.is-fav { border-color: color-mix(in srgb, var(--star) 45%, var(--line)); }
+
+.page-head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.page-date { display: grid; gap: 2px; }
+.page-year { color: var(--ink-2); font-size: var(--step--1); font-variant-numeric: tabular-nums; }
+.page-date h2 { font-family: var(--font-display); font-size: clamp(1.6rem, 6vw, 2.2rem); line-height: 1.2; font-variant-numeric: tabular-nums; }
+.page-date h2 small { font-size: .55em; color: var(--ink-2); }
+.page-date h2 small.is-sun { color: var(--sun); }
+.page-date h2 small.is-sat { color: var(--sat); }
+.page-date .tag { justify-self: start; }
+.page-actions { display: flex; align-items: center; gap: 8px; }
+
+.page-rating { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-size: var(--step--1); }
+
+/* 本文：ノートの罫線 */
+.page-text {
+  --line-h: 2.1em;
+  min-height: calc(var(--line-h) * 5);
+  background-image: linear-gradient(transparent calc(var(--line-h) - 1px), var(--rule) 0);
+  background-size: 100% var(--line-h);
+  font-family: var(--font-mincho);
+  font-size: 1.0625rem;
+  line-height: var(--line-h);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.page-reflect {
+  display: grid;
+  gap: 4px;
+  padding: 14px 16px;
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--diary) 9%, var(--surface));
+}
+.page-reflect h3 { color: var(--diary); font-size: var(--step--1); letter-spacing: .06em; }
+.page-reflect p { font-size: var(--step--1); line-height: 1.8; white-space: pre-wrap; overflow-wrap: anywhere; }
+.page-meta { color: var(--ink-2); font-size: .75rem; text-align: right; }
+
+.page-empty { display: grid; justify-items: center; gap: 14px; padding: 48px 0; color: var(--ink-2); text-align: center; }
+
+/* =========================================================
+   週・月・お気に入り
+   ========================================================= */
+
+.period-view { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+
+.pick-card {
+  display: grid;
+  gap: 10px;
+  width: 100%;
+  max-width: 460px;
+  margin-inline: auto;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+}
+.pick-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.pick-head strong { font-family: var(--font-display); font-size: var(--step-1); font-variant-numeric: tabular-nums; }
+
+/* 週を選ぶカレンダー（1行＝1週） */
+.week-cal { display: grid; gap: 2px; }
+.wc-row { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.wc-dow span { padding-block: 2px; color: var(--ink-2); font-size: .6875rem; font-weight: 700; text-align: center; }
+.wc-dow .is-sat { color: var(--sat); }
+.wc-dow .is-sun { color: var(--sun); }
+.wc-week {
+  padding: 2px 0;
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--ink);
+}
+.wc-week:hover { background: var(--surface-2); }
+.wc-week.is-selected { border-color: var(--diary); background: color-mix(in srgb, var(--diary) 12%, var(--surface)); }
+.wc-week span {
+  position: relative;
+  display: grid;
+  place-items: center;
+  height: 34px;
+  font-size: var(--step--1);
+  font-variant-numeric: tabular-nums;
+}
+.wc-week span.is-out { color: var(--ink-2); opacity: .45; }
+.wc-week span.is-today { font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+.wc-week span.has-entry::after {
+  content: "";
+  position: absolute;
+  bottom: 3px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--heart) calc(30% + var(--mood, 2) * 14%), var(--surface));
+}
+
+.period-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; }
+.period-head h2 { font-family: var(--font-display); font-size: var(--step-2); }
+.period-head h2 small { margin-left: 8px; color: var(--ink-2); font-family: var(--font-body); font-size: .75rem; }
+.period-nav { display: flex; gap: 6px; }
+.diary-summary { display: flex; flex-wrap: wrap; gap: 4px 14px; width: 100%; color: var(--ink-2); font-size: var(--step--1); font-variant-numeric: tabular-nums; }
+.diary-summary span { display: inline-flex; align-items: center; gap: 4px; }
+.diary-summary .icon { color: var(--heart); }
+.diary-summary span:last-child .icon { color: var(--star); }
+
+.card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); gap: 10px; }
+
+.diary-card { min-width: 0; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface); }
+.diary-card.is-fav { border-color: color-mix(in srgb, var(--star) 45%, var(--line)); }
+.dc-open {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  height: 100%;
+  padding: 12px 14px;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  color: var(--ink);
+  text-align: left;
+}
+.dc-open:hover { background: var(--paper-warm); }
+.dc-head { display: flex; align-items: center; gap: 8px; }
+.dc-date { font-weight: 700; font-variant-numeric: tabular-nums; }
+.dc-spacer { flex: 1; }
+.dc-star { color: var(--star); }
+.dc-text {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: var(--step--1);
+  line-height: 1.7;
+  white-space: pre-wrap;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+}
+.dc-reflect {
+  display: -webkit-box;
+  overflow: hidden;
+  padding-top: 8px;
+  border-top: 1px dashed var(--line);
+  color: var(--ink-2);
+  font-size: .75rem;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.dc-reflect b { margin-right: 6px; color: var(--diary); }
+
+.diary-card.is-empty { display: grid; gap: 6px; padding: 12px 14px; border-style: dashed; background: transparent; }
+.diary-card.is-empty .dc-date { color: var(--ink-2); font-weight: 500; }
+.dc-write {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  gap: 4px;
+  min-height: 36px;
+  padding: 0 10px 0 6px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--diary);
+  font-size: var(--step--1);
+  font-weight: 700;
+}
+.dc-write:hover { background: color-mix(in srgb, var(--diary) 10%, transparent); }
+.dc-none { color: var(--ink-2); font-size: .75rem; }
+
+/* 月を選ぶ */
+.month-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.mg-month {
+  display: grid;
+  justify-items: center;
+  gap: 0;
+  min-height: 52px;
+  padding: 6px 2px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--bg);
+  color: var(--ink);
+}
+.mg-month b { font-size: var(--step--1); }
+.mg-month small { color: var(--ink-2); font-size: .6875rem; font-variant-numeric: tabular-nums; }
+.mg-month.is-current { border-color: var(--diary); }
+.mg-month.is-selected { border-color: var(--diary); background: var(--diary); color: var(--on-diary); }
+.mg-month.is-selected small { color: inherit; opacity: .85; }
+
+/* 気分のカレンダー（♡の濃さ） */
+.mood-card {
+  display: grid;
+  gap: 10px;
+  width: 100%;
+  max-width: 460px;
+  margin-inline: auto;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+}
+.mood-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.mood-head h3 { font-size: var(--step--1); }
+.mood-legend { display: inline-flex; align-items: center; gap: 3px; color: var(--ink-2); font-size: .6875rem; }
+.mood-legend i { width: 12px; height: 12px; border-radius: 3px; background: color-mix(in srgb, var(--heart) calc(var(--mood) * 13%), var(--surface)); }
+.mood-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.mood-dow { color: var(--ink-2); font-size: .6875rem; font-weight: 700; text-align: center; }
+.mood-cell {
+  position: relative;
+  display: grid;
+  place-items: start;
+  height: 40px;
+  padding: 3px 5px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--ink);
+  font-size: .6875rem;
+  font-variant-numeric: tabular-nums;
+}
+.mood-cell.is-out { border: 0; background: transparent; }
+.mood-cell.has-entry { border-color: transparent; background: color-mix(in srgb, var(--heart) calc(var(--mood, 1) * 13%), var(--surface)); font-weight: 700; }
+.mood-cell.is-today { box-shadow: inset 0 0 0 2px var(--diary); }
+.mood-star { position: absolute; right: 3px; bottom: 2px; color: var(--star); font-size: .75rem; }
+
+.list-tools { display: flex; justify-content: flex-end; }
+.list-tools .switch { min-height: 40px; }
+.diary-empty { padding: 28px 16px; border: 1px dashed var(--line); border-radius: var(--r-lg); color: var(--ink-2); text-align: center; }
